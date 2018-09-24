@@ -12,6 +12,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Configuration;
 using Workforce.Models;
 using Workforce.Models.ViewModels;
+using System.Data.SqlClient;
 
 namespace Workforce.Controllers {
     public class StudentController : Controller {
@@ -23,7 +24,7 @@ namespace Workforce.Controllers {
 
         public IDbConnection Connection {
             get {
-                return new SqliteConnection (_config.GetConnectionString ("DefaultConnection"));
+                return new SqlConnection (_config.GetConnectionString ("DefaultConnection"));
             }
         }
 
@@ -42,20 +43,14 @@ namespace Workforce.Controllers {
         ";
 
             using (IDbConnection conn = Connection) {
-                Dictionary<int, Student> students = new Dictionary<int, Student> ();
-
-                var studentQuerySet = await conn.QueryAsync<Student, Cohort, Student> (
+                IEnumerable<Student> studentQuerySet = await conn.QueryAsync<Student, Cohort, Student> (
                         sql,
                         (student, cohort) => {
-                            if (!students.ContainsKey (student.Id)) {
-                                students[student.Id] = student;
-                            }
-                            students[student.Id].Cohort = cohort;
+                            student.Cohort = cohort;
                             return student;
                         }
                     );
-                return View (students.Values);
-
+                return View (studentQuerySet);
             }
         }
 
