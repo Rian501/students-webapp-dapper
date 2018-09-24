@@ -40,7 +40,7 @@ namespace Workforce.Controllers {
                 c.Name
             from Student s
             join Cohort c on s.CohortId = c.Id
-        ";
+            ";
 
             using (IDbConnection conn = Connection) {
                 IEnumerable<Student> studentQuerySet = await conn.QueryAsync<Student, Cohort, Student> (
@@ -70,7 +70,7 @@ namespace Workforce.Controllers {
 
             using (IDbConnection conn = Connection) {
 
-                Student student = (await conn.QueryAsync<Student> (sql)).ToList ().Single ();
+                Student student = await conn.QuerySingleAsync<Student> (sql);
 
                 if (student == null) {
                     return NotFound ();
