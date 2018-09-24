@@ -1,0 +1,40 @@
+@model Workforce.Models.Student
+
+@{
+    ViewData["Title"] = "Student Details";
+}
+
+<h2>@ViewData["Title"]</h2>
+
+<div>
+    <h4>@Html.DisplayFor(taco => taco.FullName)</h4>
+    <hr />
+    <dl class="dl-horizontal">
+        <dt>
+            @Html.DisplayNameFor(taco => taco.FirstName)
+        </dt>
+        <dd>
+            @Html.DisplayFor(taco => taco.FirstName)
+        </dd>
+    </dl>
+    <dl class="dl-horizontal">
+        <dt>
+            @Html.DisplayNameFor(taco => taco.LastName)
+        </dt>
+        <dd>
+            @Html.DisplayFor(taco => taco.LastName)
+        </dd>
+    </dl>
+    <dl class="dl-horizontal">
+        <dt>
+            @Html.DisplayNameFor(taco => taco.SlackHandle)
+        </dt>
+        <dd>
+            @Html.DisplayFor(taco => taco.SlackHandle)
+        </dd>
+    </dl>
+</div>
+<div>
+    <a asp-action="Edit" asp-route-id="@Model.Id">Edit</a> |
+    <a asp-action="Index">Back to List</a>
+</div>

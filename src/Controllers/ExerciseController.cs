@@ -10,7 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Configuration;
 using Workforce.Models;
-using Workforce.Models;
+using System.Data.SqlClient;
 
 namespace Workforce.Controllers {
     public class ExerciseController : Controller {
@@ -22,7 +22,7 @@ namespace Workforce.Controllers {
 
         public IDbConnection Connection {
             get {
-                return new SqliteConnection (_config.GetConnectionString ("DefaultConnection"));
+                return new SqlConnection (_config.GetConnectionString ("DefaultConnection"));
             }
         }
 
@@ -35,17 +35,31 @@ namespace Workforce.Controllers {
             }
         }
 
-        public async Task<IActionResult> Edit (int? id) {
-            if (id == null) {
-                return NotFound ();
+        public IActionResult Create () {
+            return View ();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create ([Bind ("ExerciseId, Name, Language")] Exercise exercise) {
+            if (ModelState.IsValid) {
+                string sql = $@"
+                    INSERT INTO Exercise
+                        ( Id, Name, Language )
+                        VALUES
+                        ( null, '{exercise.Name}', '{exercise.Language}' )
+                    ";
+
+                using (IDbConnection conn = Connection) {
+                    int rowsAffected = await conn.ExecuteAsync (sql);
+
+                    if (rowsAffected > 0) {
+                        return RedirectToAction (nameof (Index));
+                    }
+                }
             }
 
-            string sql = $"SELECT Id, Name, Language FROM Exercise WHERE Id = {id}";
-
-            using (IDbConnection conn = Connection) {
-                Exercise exercise = (await conn.QueryAsync<Exercise> (sql)).Single ();
-                return View (exercise);
-            }
+            return View (exercise);
         }
 
         [HttpPost]
@@ -71,24 +85,45 @@ namespace Workforce.Controllers {
                 }
 
             } else {
-                return new StatusCodeResult(StatusCodes.Status406NotAcceptable);
+                return new StatusCodeResult (StatusCodes.Status406NotAcceptable);
+            }
+        }
+
+        public async Task<IActionResult> DeleteConfirm (int? id) {
+            if (id == null) {
+                return NotFound ();
             }
 
+            string sql = $@"
+                select
+                    e.Id,
+                    e.Name,
+                    e.Language
+                from Exercise e
+                WHERE e.Id = {id}";
+
+            using (IDbConnection conn = Connection) {
+                Exercise exercise = await conn.QueryFirstAsync<Exercise> (sql);
+
+                if (exercise == null) return NotFound ();
+
+                return View (exercise);
+            }
         }
 
-        public IActionResult Contact () {
-            ViewData["Message"] = "Your contact page.";
+        [HttpPost, ActionName ("Delete")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteConfirmed (int id) {
 
-            return View ();
-        }
+            string sql = $@"DELETE FROM Exercise WHERE Id = {id}";
 
-        public IActionResult Privacy () {
-            return View ();
-        }
-
-        [ResponseCache (Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-        public IActionResult Error () {
-            return View (new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+            using (IDbConnection conn = Connection) {
+                int rowsAffected = await conn.ExecuteAsync (sql);
+                if (rowsAffected > 0) {
+                    return RedirectToAction (nameof (Index));
+                }
+                throw new Exception ("No rows affected");
+            }
         }
     }
 }
